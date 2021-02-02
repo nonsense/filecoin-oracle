@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract FilecoinService {
+  address public owner;
+
   event NewCid(string cid);
 
   struct Cid {
@@ -11,15 +13,22 @@ contract FilecoinService {
     string miner;
   }
 
-  // cid -> miners[]
-  mapping(string => string[]) public cidsToMiners;
+  mapping(string => string[]) public cidsToMiners; // cid -> miners[]
 
-  // all cids
-  string[] public cids;
+  mapping(address => bool) public managers; // managers -> who can update cids
+
+  string[] public cids; // all cids
+
+  // *** constructor ***
 
   constructor() {
-    console.log("Deploying a FilecoinService");
+    console.log("deploying a FilecoinService contract");
+
+    owner = msg.sender;
+    managers[msg.sender] = true;
   }
+
+  // *** main methods ***
 
   function subscribeCid(string memory cid) public {
     cids.push(cid); // TODO: check that we don't have it???
@@ -27,17 +36,43 @@ contract FilecoinService {
     emit NewCid(cid);
   }
 
-  function get(string memory cid) public view returns (string[] memory) {
-    console.log("Getting cid '%s'", cid);
-    return cidsToMiners[cid];
-
+  function getAllCids() public view returns (string[] memory) {
+    console.log("getAllCids()");
+    return cids;
   }
 
-  function updateOne(string memory cid, string memory miner) public {
+  function getMinersForCid(string memory cid) public view returns (string[] memory) {
+    console.log("getMinersForCid(cid == '%s')", cid);
+    return cidsToMiners[cid];
+  }
+
+  function updateOne(string memory cid, string memory miner) external onlyManager {
+    console.log("updateOne(cid == '%s' ; miner == '%s')", cid, miner);
     cidsToMiners[cid].push(miner);
   }
 
-  function length(string memory cid) public view returns (uint) {
+  function getMinersForCidLength(string memory cid) public view returns (uint) {
+    console.log("getMinersForCidLength(cid == '%s')", cid);
     return cidsToMiners[cid].length;
+  }
+
+  // *** manager and owner functionality and modifiers ***
+
+  modifier onlyOwner() {
+    require(msg.sender == owner, "only the owner of the contract can call this method");
+    _;
+  }
+
+  modifier onlyManager() {
+    require(managers[msg.sender] == true, "only managers allowed to call this method");
+    _;
+  }
+
+  function addManager(address _manager) external onlyOwner {
+    managers[_manager] = true;
+  }
+
+  function removeManager(address _manager) external onlyOwner {
+    managers[_manager] = false;
   }
 }
