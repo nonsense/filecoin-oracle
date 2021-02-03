@@ -50,7 +50,7 @@ describe('FilecoinService', () => {
       )
     })
 
-    describe('two account tree', () => {
+    describe('two cids tree', () => {
       let filecoinService: Contract
       let tree: CidsTree
       beforeEach('deploy', async () => {
@@ -61,11 +61,19 @@ describe('FilecoinService', () => {
         filecoinService = await deployContract(wallet0, FilecoinService, [tree.getHexRoot(), 10000], overrides)
       })
 
-      it('successful proof', async () => {
-        const proof0 = tree.getProof("datacid1234", "piececid1234", BigNumber.from(150505), "fprovider1", BigNumber.from(10), BigNumber.from(2000), BigNumber.from(50))
+      it('successful and broken proof', async () => {
+        var proof0 = tree.getProof("datacid1234", "piececid1234", BigNumber.from(150505), "fprovider1", BigNumber.from(10), BigNumber.from(2000), BigNumber.from(50))
+        //for (var item of proof0) {
+          //console.log(item)
+        //}
         await expect(filecoinService.submitProof("datacid1234", "piececid1234", BigNumber.from(150505), "fprovider1", BigNumber.from(10), BigNumber.from(2000), BigNumber.from(50), proof0, overrides))
           .to.emit(filecoinService, 'StoredCid')
           //.withArgs(0, wallet0.address, 100)
+
+        var brokenProof = proof0
+        brokenProof[0] = "0xe476bc2413fc2aff9f04a6ad695bc158b5420a6d98f6691cfb7ce9a9ec2cdcf8"
+        await expect(filecoinService.submitProof("datacid1234", "piececid1234", BigNumber.from(150505), "fprovider1", BigNumber.from(10), BigNumber.from(2000), BigNumber.from(50), brokenProof, overrides))
+          .to.be.revertedWith("invalid proof")
       })
     })
   })
