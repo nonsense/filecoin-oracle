@@ -27,16 +27,20 @@ contract FilecoinService {
 
   MerkleUpdate public state;
 
+  function merkleRoot() external view returns (bytes32) {
+    return state.merkleRoot;
+  }
+
   // *** constructor ***
 
-  constructor(bytes32 merkleRoot, uint256 epoch) {
+  constructor(bytes32 _merkleRoot, uint256 _epoch) {
     console.log("deploying a FilecoinService contract");
 
     owner = msg.sender;
     managers[msg.sender] = true;
 
-    state.merkleRoot = merkleRoot;
-    state.epoch = epoch;
+    state.merkleRoot = _merkleRoot;
+    state.epoch = _epoch;
     state.updatedAtTimestamp = block.timestamp;
   }
 
@@ -52,7 +56,6 @@ contract FilecoinService {
     uint256 signedEpoch,
     bytes32[] calldata merkleProof
   ) public {
-
     // verify the merkle proof
     bytes32 node = keccak256(abi.encodePacked(dataCid, pieceCid, dealId, provider, startEpoch, endEpoch, signedEpoch));
     require(MerkleProof.verify(merkleProof, state.merkleRoot, node), 'invalid proof');
@@ -62,9 +65,9 @@ contract FilecoinService {
 
   // *** manager methods ***
 
-  function updateState(bytes32 merkleRoot, uint256 epoch) external onlyManager {
-    state.merkleRoot = merkleRoot;
-    state.epoch = epoch;
+  function updateState(bytes32 _merkleRoot, uint256 _epoch) external onlyManager {
+    state.merkleRoot = _merkleRoot;
+    state.epoch = _epoch;
     state.updatedAtTimestamp = block.timestamp;
   }
 
