@@ -1,59 +1,74 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.7.6;
+
+import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
 
 import "hardhat/console.sol";
 
 contract FilecoinService {
   address public owner;
-
-  event NewCid(string cid);
-
-  struct Cid {
-    string cid;
-    string miner;
-  }
-
-  mapping(string => string[]) public cidsToMiners; // cid -> miners[]
-
   mapping(address => bool) public managers; // managers -> who can update cids
 
-  string[] public cids; // all cids
+  event StoredCid(
+    string dataCid,
+    string pieceCid,
+    uint256 dealId,
+    string provider,
+    uint256 startEpoch,
+    uint256 endEpoch,
+    uint256 signedEpoch
+  );
+
+  struct MerkleUpdate {
+      uint256 updatedAtTimestamp;
+      bytes32 merkleRoot;
+      uint256 epoch;
+  }
+
+  MerkleUpdate public state;
+
+  function merkleRoot() external view returns (bytes32) {
+    return state.merkleRoot;
+  }
 
   // *** constructor ***
 
-  constructor() {
+  constructor(bytes32 _merkleRoot, uint256 _epoch) {
     console.log("deploying a FilecoinService contract");
 
     owner = msg.sender;
     managers[msg.sender] = true;
+
+    state.merkleRoot = _merkleRoot;
+    state.epoch = _epoch;
+    state.updatedAtTimestamp = block.timestamp;
   }
 
-  // *** main methods ***
+  // *** public methods ***
 
-  function subscribeCid(string memory cid) public {
-    cids.push(cid); // TODO: check that we don't have it???
+  function submitProof(
+    string calldata dataCid,
+    string calldata pieceCid,
+    uint256 dealId,
+    string calldata provider,
+    uint256 startEpoch,
+    uint256 endEpoch,
+    uint256 signedEpoch,
+    bytes32[] calldata merkleProof
+  ) public {
+    // verify the merkle proof
+    bytes32 node = keccak256(abi.encodePacked(dataCid, pieceCid, dealId, provider, startEpoch, endEpoch, signedEpoch));
+    require(MerkleProof.verify(merkleProof, state.merkleRoot, node), 'invalid proof');
 
-    emit NewCid(cid);
+    emit StoredCid(dataCid, pieceCid, dealId, provider, startEpoch, endEpoch, signedEpoch);
   }
 
-  function getAllCids() public view returns (string[] memory) {
-    console.log("getAllCids()");
-    return cids;
-  }
+  // *** manager methods ***
 
-  function getMinersForCid(string memory cid) public view returns (string[] memory) {
-    console.log("getMinersForCid(cid == '%s')", cid);
-    return cidsToMiners[cid];
-  }
-
-  function updateOne(string memory cid, string memory miner) external onlyManager {
-    console.log("updateOne(cid == '%s' ; miner == '%s')", cid, miner);
-    cidsToMiners[cid].push(miner);
-  }
-
-  function getMinersForCidLength(string memory cid) public view returns (uint) {
-    console.log("getMinersForCidLength(cid == '%s')", cid);
-    return cidsToMiners[cid].length;
+  function updateState(bytes32 _merkleRoot, uint256 _epoch) external onlyManager {
+    state.merkleRoot = _merkleRoot;
+    state.epoch = _epoch;
+    state.updatedAtTimestamp = block.timestamp;
   }
 
   // *** manager and owner functionality and modifiers ***

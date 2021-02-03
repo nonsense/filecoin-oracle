@@ -1,3 +1,3 @@
-npm install --save-dev hardhat
-
 npx hardhat compile
+
+npx hardhat test
