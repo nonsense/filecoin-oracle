@@ -63,6 +63,22 @@ contract FilecoinService {
     emit StoredCid(dataCid, pieceCid, dealId, provider, startEpoch, endEpoch, signedEpoch);
   }
 
+  function verifyProof(
+    string calldata dataCid,
+    string calldata pieceCid,
+    uint256 dealId,
+    string calldata provider,
+    uint256 startEpoch,
+    uint256 endEpoch,
+    uint256 signedEpoch,
+    bytes32[] calldata merkleProof
+  ) public view returns(bool) {
+    // verify the merkle proof
+    bytes32 node = keccak256(abi.encodePacked(dataCid, pieceCid, dealId, provider, startEpoch, endEpoch, signedEpoch));
+
+    return MerkleProof.verify(merkleProof, state.merkleRoot, node);
+  }
+
   // *** manager methods ***
 
   function updateState(bytes32 _merkleRoot, uint256 _epoch) external onlyManager {
