@@ -10,7 +10,7 @@ The experimental Filecoin Oracle consists of two parts:
 
 1. `smart contracts` - Solidity smart contracts for Ethereum
 
-2. `web oracle` - A trusted web service which monitors the state of the Filecoin blockchain
+2. `web oracle` - [A trusted web service which monitors the state of the Filecoin blockchain](https://github.com/dirkmc/filecoin-deal-proofs-svc)
 
 ---
 
