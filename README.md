@@ -1,4 +1,4 @@
-# Filecoin Oracle on Ethereum
+# Filecoin Oracle on Ethereum - `smart contracts`
 
 This is an experimental proof-of-concept smart contract for a Filecoin oracle on Ethereum.
 
